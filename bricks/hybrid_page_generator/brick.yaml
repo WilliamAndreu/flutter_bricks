@@ -1,0 +1,8 @@
+name: Hybrid Page Generator
+description: A mason brick for generate bloc pages in EVO arch
+version: 0.1.0+1
+vars:
+  name:
+    type: string
+    description: Name of the page.
+    prompt: Enter the page name.
