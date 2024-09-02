@@ -4,9 +4,9 @@ import 'package:equatable/equatable.dart';
 part '{{name.lowerCase()}}_event.dart';
 part '{{name.lowerCase()}}_state.dart';
 
-class {{name.titleCase()}}Bloc extends Bloc<{{name.titleCase()}}Event, {{name.titleCase()}}State> {
-  {{name.titleCase()}}Bloc() : super({{name.titleCase()}}Initial()) {
-    on<{{name.titleCase()}}Event>((event, emit) {
+class {{name.pascalCase()}}Bloc extends Bloc<{{name.pascalCase()}}Event, {{name.pascalCase()}}State> {
+  {{name.pascalCase()}}Bloc() : super({{name.pascalCase()}}Initial()) {
+    on<{{name.pascalCase()}}Event>((event, emit) {
       // TODO: implement event handler
     });
   }
