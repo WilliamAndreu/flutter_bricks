@@ -20,7 +20,7 @@ void main() async {
     final widgetLocation = await getWidgetDirectory();
 
     if (checkIfWidgetExists(name: widgetName, directoryPath: widgetLocation)) {
-      logger.warn('The page "$widgetName" already exists.');
+      logger.warn('The widget "$widgetName" already exists in "$widgetLocation".');
     } else {
       await generateWidget(name: widgetName, widgetType: widgetType, directoryPath: widgetLocation);
     }
@@ -56,16 +56,31 @@ Future<WidgetType> getWidgetType() async {
   logger.info('What type of widget do you want to generate?');
   logger.info('1. Stateless');
   logger.info('2. Stateful');
-  final typeSelection = await logger.prompt(': ');
 
-  if (!['1', '2'].contains(typeSelection)) {
-    throw FormatException('Invalid choice. Please enter 1 or 2.');
+  String typeSelection;
+  while(true) {
+    try {
+      typeSelection = await logger.prompt(': ');
+      if (!['1', '2'].contains(typeSelection)) {
+        throw FormatException('Invalid choice. Please enter 1 or 2.');
+      }
+      break;
+    } on FormatException catch(e) {
+      logger.err(e.message);
+    }
   }
 
-  final isCubit = await logger.prompt('Would you like to use cubit? (y/n)');
-
-  if (!['y', 'n'].contains(isCubit)) {
-    throw FormatException('Invalid choice. Please enter y or n.');
+  String isCubit;
+  while(true) {
+    try {
+      isCubit = await logger.prompt('Would you like to use cubit? (y/n)');
+      if (!['y', 'n'].contains(isCubit)) {
+        throw FormatException('Invalid choice. Please enter y or n.');
+      }
+      break;
+    } on FormatException catch(e) {
+      logger.err(e.message);
+    }
   }
 
   if (isCubit == 'y') {
@@ -77,38 +92,41 @@ Future<WidgetType> getWidgetType() async {
 
 Future<String> getWidgetDirectory() async {
   final globalWidgetsPath = 'lib/layers/presentation/widgets';
+  final featuresDir = Directory('lib/layers/presentation/features');
+  final featuresList = featuresDir.listSync().whereType<Directory>().toList();
 
-  try {
-    final featuresDir = Directory('lib/layers/presentation/features');
-    final featuresList = featuresDir.listSync().whereType<Directory>().toList();
-
-    if (featuresList.isEmpty) {
-      return globalWidgetsPath;
-    }
-
-    logger.info('Where do you want to generate your widget?');
-    logger.info('0. Global (At presentation folder)');
-
-    for (int index = 0; index < featuresList.length; index++) {
-      logger.info('${index + 1}. ${featuresList[index].path.split('/').last} feature');
-    }
-
-    final userSelection = await logger.prompt(': ');
-    final userSelectionInt = int.tryParse(userSelection);
-
-    if (userSelectionInt == null || userSelectionInt < 0 || userSelectionInt > featuresList.length) {
-      throw FormatException('Invalid choice. Please enter a number between 0 and ${featuresList.length}.');
-    }
-
-    if (userSelectionInt == 0) {
-      return globalWidgetsPath;
-    } else {
-      final featureName = featuresList[userSelectionInt - 1].path.split('/').last;
-      return 'lib/layers/presentation/features/$featureName/widgets';
-    }
-  } catch (e) {
-    logger.err('An error occurred: $e');
+  if (featuresList.isEmpty) {
     return globalWidgetsPath;
+  }
+
+  logger.info('Where do you want to generate your widget?');
+  logger.info('0. Global (At presentation folder)');
+
+  for (int index = 0; index < featuresList.length; index++) {
+    logger.info('${index + 1}. ${featuresList[index].path.split('/').last} feature');
+  }
+
+  int? userSelectionInt;
+  while(true) {
+    try {
+      final userSelection = await logger.prompt(': ');
+      userSelectionInt = int.tryParse(userSelection);
+
+      if (userSelectionInt == null || userSelectionInt < 0 || userSelectionInt > featuresList.length) {
+        throw FormatException('Invalid input. Please enter a number between 0 and ${featuresList.length}.');
+      }
+
+      break;
+    } on FormatException catch(e) {
+      logger.err(e.message);
+    }
+  }
+
+  if (userSelectionInt! == 0) {
+    return globalWidgetsPath;
+  } else {
+    final featureName = featuresList[userSelectionInt! - 1].path.split('/').last;
+    return 'lib/layers/presentation/features/$featureName/widgets';
   }
 }
 
@@ -132,7 +150,7 @@ Future<void> generateWidget({required String name, required WidgetType widgetTyp
     progress.complete('Done!');
     logger.success('Page "$name" generated successfully.');
   } catch (e) {
-    logger.err('An error occurred while generating page: $e');
+    logger.err('An error occurred while generating widget: $e');
     progress.cancel();
   }
 }
