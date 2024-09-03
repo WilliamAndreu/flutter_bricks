@@ -37,13 +37,13 @@ Future<String> promptWidgetName() async {
 
 void checkValidName(String name) {
   if (name.isEmpty) {
-    throw FormatException('Page name cannot be empty.');
+    throw FormatException('Widget name cannot be empty.');
   }
 
   final invalidChars = RegExp(r'[^\w\s\-]');
 
   if (invalidChars.hasMatch(name)) {
-    throw FormatException('Page name contains invalid characters. Only letters, numbers, underscores, and hyphens are allowed.');
+    throw FormatException('Widget name contains invalid characters. Only letters, numbers, underscores, and hyphens are allowed.');
   }
 }
 
@@ -53,80 +53,51 @@ bool checkIfWidgetExists({required String name, required String directoryPath}) 
 }
 
 Future<WidgetType> getWidgetType() async {
-  logger.info('What type of widget do you want to generate?');
-  logger.info('1. Stateless');
-  logger.info('2. Stateful');
+  final typeSelection = await logger.chooseOne(
+    'What type of widget do you want to generate?',
+    choices: ['Stateless', 'Stateful'],
+    defaultValue: 'Stateless',
+  );
 
-  String typeSelection;
-  while(true) {
-    try {
-      typeSelection = await logger.prompt(': ');
-      if (!['1', '2'].contains(typeSelection)) {
-        throw FormatException('Invalid choice. Please enter 1 or 2.');
-      }
-      break;
-    } on FormatException catch(e) {
-      logger.err(e.message);
-    }
-  }
+  final isCubit = await logger.confirm(
+    'Would you like to use cubit?', 
+    defaultValue: false,
+  );
 
-  String isCubit;
-  while(true) {
-    try {
-      isCubit = await logger.prompt('Would you like to use cubit? (y/n)');
-      if (!['y', 'n'].contains(isCubit)) {
-        throw FormatException('Invalid choice. Please enter y or n.');
-      }
-      break;
-    } on FormatException catch(e) {
-      logger.err(e.message);
-    }
-  }
-
-  if (isCubit == 'y') {
-    return typeSelection == '1' ? WidgetType.statelessCubit : WidgetType.statefulCubit;
+  if (isCubit) {
+    return typeSelection == 'Stateless' ? WidgetType.statelessCubit : WidgetType.statefulCubit;
   } else {
-    return typeSelection == '1' ? WidgetType.statelessDefault : WidgetType.statefulDefault;
+    return typeSelection == 'Stateless' ? WidgetType.statelessDefault : WidgetType.statefulDefault;
   }
 }
 
 Future<String> getWidgetDirectory() async {
   final globalWidgetsPath = 'lib/layers/presentation/widgets';
   final featuresDir = Directory('lib/layers/presentation/features');
+
+  if (!featuresDir.existsSync()) {
+    return globalWidgetsPath;
+  }
+
   final featuresList = featuresDir.listSync().whereType<Directory>().toList();
 
   if (featuresList.isEmpty) {
     return globalWidgetsPath;
   }
 
-  logger.info('Where do you want to generate your widget?');
-  logger.info('0. Global (At presentation folder)');
+  final userSelection = await logger.chooseOne(
+    'Where do you want to generate your widget?',
+    choices: [
+      'Global (At presentation folder)',
+      ...featuresList.map((e) => e.path.split('/').last),
+    ],
+    defaultValue: 'Global (At presentation folder)',
+  );
 
-  for (int index = 0; index < featuresList.length; index++) {
-    logger.info('${index + 1}. ${featuresList[index].path.split('/').last} feature');
-  }
-
-  int? userSelectionInt;
-  while(true) {
-    try {
-      final userSelection = await logger.prompt(': ');
-      userSelectionInt = int.tryParse(userSelection);
-
-      if (userSelectionInt == null || userSelectionInt < 0 || userSelectionInt > featuresList.length) {
-        throw FormatException('Invalid input. Please enter a number between 0 and ${featuresList.length}.');
-      }
-
-      break;
-    } on FormatException catch(e) {
-      logger.err(e.message);
-    }
-  }
-
-  if (userSelectionInt! == 0) {
+  if (userSelection == 'Global (At presentation folder)') {
     return globalWidgetsPath;
   } else {
-    final featureName = featuresList[userSelectionInt! - 1].path.split('/').last;
-    return 'lib/layers/presentation/features/$featureName/widgets';
+    return 'lib/layers/presentation/features/$userSelection/widgets';
   }
 }
 
